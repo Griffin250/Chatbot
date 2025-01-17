@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { Configuration, OpenAIApi } = require("openai");
+const { OpenAI } = require("openai");
 
 require("dotenv").config();
 
@@ -8,10 +8,9 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // OpenAI Configuration
-const configuration = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-const openai = new OpenAIApi(configuration);
 
 // Middleware
 app.use(cors());
@@ -27,13 +26,22 @@ app.post("/chat", async (req, res) => {
   }
 
   try {
-    const response = await openai.createChatCompletion({
+    const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [{ role: "user", content: message }],
+      max_tokens: 50,
     });
 
-    const reply = response.data.choices[0].message.content;
-    res.json({ reply });
+    // Log the full response to inspect the structure
+    console.log("API Response:", response);
+
+    // Now directly access choices from the response object
+    if (response.choices && response.choices.length > 0) {
+      const reply = response.choices[0].message.content;
+      res.json({ reply });
+    } else {
+      res.status(500).json({ error: "No valid response received from OpenAI." });
+    }
   } catch (error) {
     console.error("Error response from OpenAI:", error.response?.data || error.message);
     res.status(500).json({ error: "An error occurred while communicating with OpenAI." });
