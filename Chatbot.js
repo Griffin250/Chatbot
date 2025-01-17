@@ -1,104 +1,85 @@
-import {
-  faClose,
-  faMinus,
-  faRobot,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useState } from "react";
-import ChatAi from "./ChatAi";
-import AOS from 'aos';
-import 'aos/dist/aos.css';
-import { useEffect } from "react";
+import axios from "axios";
+import { faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+
 const Chatbot = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  useEffect(()=>{
-    AOS.init({
-      duration:3000,
-      once:false,
-    });
-  }, []);
-  const toggleChat = () => {
-    setIsOpen(!isOpen);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+
+  const sendMessage = async () => {
+    if (!input.trim()) return;
+
+    const newMessages = [...messages, { user: "client", text: input }];
+    setMessages(newMessages);
+
+    try {
+      const response = await axios.post("http://localhost:5000/chat", {
+        message: input,
+      });
+      setMessages([...newMessages, { user: "bot", text: response.data.reply }]);
+    } catch (error) {
+      setMessages([
+        ...newMessages,
+        { user: "bot", text: "Sorry, something went wrong." },
+      ]);
+    }
+
+    setInput("");
   };
 
   return (
-    <div className="fixed bottom-14 right-8 z-50">
-      {/* Chatbot Popup */}
-      {isOpen && (
-        <div className="bg-gray-900 p-4 rounded-lg shadow-lg w-80 h-auto border border-orange-500" data-aos="fade-left" data-aos-duration="2000">
-          <div className="flex justify-between items-center">
-            <h2 className="font-bold text-2xl text-white text-center m-auto">
-              SAM-IT AI Bot
-            </h2>
-            <button
-              onClick={toggleChat}
-              className="text-gray-900 hover:text-gray-700 focus:outline-none"
+    <div className="max-w-md mx-auto p-4 shadow-lg rounded-md ">
+      <div className="h-52 overflow-y-auto mb-4">
+        {messages.map((msg, index) => (
+          <div
+            key={index}
+            className={`p-2 ${
+              msg.user === "client" ? "text-right" : "text-left"
+            }`}
+
+          >
+            <p
+              className={`inline-block px-3 py-2 rounded-md ${
+                msg.user === "client"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 text-gray-800"
+              }`}
             >
-              <FontAwesomeIcon
-                icon={faMinus}
-                className="h-6 w-6 text-orange-700 px-2"
-                title="Minimize Chat Window"
-              />
-              <FontAwesomeIcon
-                icon={faClose}
-                className="h-6 w-6 text-orange-700 px-2"
-                title="End Chat"
-              />
-            </button>
-          </div>
-
-          <div className="mt-4 overflow-y-auto h-80">
-            <p className="text-sm text-white">
-              Hello! How can I assist you today?
+              {msg.text}
             </p>
-            {/* <p className='mt-4 overflow-y-auto p-4 rounded-t-3xl bg-gray-200'> Thank you for contacting GriffinTechs. 
-              By continuing you agree to our privacy policy <a href='#privacy' className='text-blue-400'>https://newfold.com/privacy-center </a> </p>*/}
-            {/* Chat messages would go here */}
-            <ChatAi/>
           </div>
-
-         
-          <div className="relative flex items-center w-full">
-             {/* ...............Send Button 
-            <form method="get" className="relative flex items-center w-full">
-              <input
-                type="text"
-                placeholder="Type your message..."
-                className="flex-1 p-2 pr-14 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-600"
-              />
-             
-              <button
-                className="absolute right-0 h-full px-4 text-orange-600 flex items-center justify-center"
-                type="submit"
-              >
-                <FontAwesomeIcon
+        ))}
+      </div>
+      <form
+  onSubmit={(e) => {
+    e.preventDefault(); // Prevent default form submission
+    sendMessage(); // Trigger the sendMessage function
+  }} 
+>
+  <div className="flex items-center">
+    <input
+      type="text"
+      value={input}
+      onChange={(e) => setInput(e.target.value)}
+      placeholder="Type a message..."
+      className="flex-1 border rounded-md p-2 focus:outline-none"
+    />
+      <button
+           type="submit"
+          className="chatbot-btn bg-orange-500 text-white px-4 py-2 rounded-r-md hover:bg-orange-600"
+        >
+           <FontAwesomeIcon
                   icon={faPaperPlane}
-                  className="h-6 w-6"
+                  className="h-4 w-4"
                   title="Ask AI"
                 />
-              </button>
-            </form> ...................*/}
-          </div>
-          <p className="text-white">
-            Your use of this Chatbot is governed by this{" "}
-            <a href="#discalimer" className="text-blue-400">
-              {" "}
-              disclaimer.{" "}
-            </a>
-          </p>
-        </div>
-      )}
-
-      {/* Floating Chat Button */}
-      {!isOpen && (
-        <button 
-          onClick={toggleChat}
-          className="bg-orange-700 text-white p-4 rounded-full shadow-lg hover:bg-orange-600 focus:outline-none"
-        data-aos="fade-up" data-aos-duration="3000">
-          <FontAwesomeIcon icon={faRobot} className="h-8 w-8" />
         </button>
-      )}
+  </div>
+</form>
+
     </div>
+    
   );
 };
 
